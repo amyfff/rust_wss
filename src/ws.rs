@@ -36,7 +36,7 @@ pub async fn handle_socket(mut socket: WebSocket, user_id: String) {
         "data": format!("Welcome, user {}! You are now listening for updates.", user_id)
     }).to_string();
 
-    if socket.send(Message::Text(welcome_msg)).await.is_err() {
+    if socket.send(Message::Text(welcome_msg.into())).await.is_err() {
         tracing::warn!("Gagal mengirim pesan selamat datang ke {}", user_id);
         return;
     }
@@ -45,7 +45,7 @@ pub async fn handle_socket(mut socket: WebSocket, user_id: String) {
         tokio::select! {
             // Menerima pesan baru dari channel broadcast dan mengirimkannya ke client
             Ok(msg) = rx.recv() => {
-                if socket.send(Message::Text(msg)).await.is_err() {
+                if socket.send(Message::Text(msg.into())).await.is_err() {
                     // Client terputus
                     break;
                 }

@@ -1,16 +1,16 @@
 use crate::error::AppError;
+use async_trait::async_trait;
 use axum::{
-    async_trait,
     extract::{FromRequestParts, Request},
     http::{request::Parts, HeaderMap}, // Import HeaderMap
     middleware::Next,
     response::Response,
 };
 // NEW: Import from axum-extra
-use axum_extra::{
-    headers::{authorization::Bearer, Authorization},
-    TypedHeader,
-};
+// use axum_extra::{
+//     headers::{authorization::Bearer, Authorization},
+//     TypedHeader,
+// };
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
@@ -72,9 +72,12 @@ pub async fn auth_middleware(mut request: Request, next: Next) -> Result<Respons
 
 // MODIFIED: Changed function to be synchronous and accept &HeaderMap
 fn get_token_from_headers(headers: &HeaderMap) -> Result<String, AppError> {
-    TypedHeader::<Authorization<Bearer>>::from_headers(headers)
-        .map(|TypedHeader(Authorization(bearer))| bearer.token().to_string())
-        .map_err(|_| AppError::Unauthorized)
+    headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|header| header.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .map(|s| s.to_owned())
+        .ok_or(AppError::Unauthorized)
 }
 
 

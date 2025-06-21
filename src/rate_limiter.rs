@@ -1,8 +1,10 @@
 use tower_governor::{
-    governor::{middleware::NoOpMiddleware, GovernorConfigBuilder}, // MODIFIED IMPORT
+    governor::GovernorConfigBuilder, // REMOVED 'middleware::'
     key_extractor::SmartIpKeyExtractor,
     GovernorLayer,
 };
+
+use governor::middleware::NoOpMiddleware;
 
 pub fn create_governor_layer() -> GovernorLayer<SmartIpKeyExtractor, NoOpMiddleware> {
     let config = Box::new(
