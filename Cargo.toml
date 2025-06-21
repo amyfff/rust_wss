@@ -25,6 +25,7 @@ validator = { version = "0.18.1", features = ["derive"] }
 futures-util = "0.3.30"
 thiserror = "1.0.61"
 anyhow = "1.0.86"
+governor = "0.6.0"
 
 # Rate limiting
 tower_governor = "0.4.1"
