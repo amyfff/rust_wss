@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 # Fitur "ws" sangat penting untuk WebSocket
-axum = { version = "0.7.5", features = ["macros", "ws"] }
+axum = { version = "0.8.4", features = ["macros", "ws"] }
 axum-extra = { version = "0.9.3", features = ["typed-header"] }
 tokio = { version = "1.37.0", features = ["full"] }
 tower = "0.4.13"
@@ -28,7 +28,7 @@ anyhow = "1.0.86"
 governor = "0.6.0"
 
 # Rate limiting
-tower_governor = "0.4.1"
+tower_governor = { version = "0.4.1", default-features = false }
 
 # Dependensi yang dibutuhkan oleh Axum 0.7
 hyper = { version = "1", features = ["full"] }
