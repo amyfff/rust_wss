@@ -2,17 +2,20 @@ use crate::error::AppError;
 use axum::{
     async_trait,
     extract::{FromRequestParts, Request},
-    // Path import yang benar untuk axum 0.7+
-    headers::{authorization::Bearer, Authorization},
-    http::request::Parts,
+    http::{request::Parts, HeaderMap}, // Import HeaderMap
     middleware::Next,
     response::Response,
+};
+// NEW: Import from axum-extra
+use axum_extra::{
+    headers::{authorization::Bearer, Authorization},
     TypedHeader,
 };
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
+// The Claims struct and its impl block remain unchanged...
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     pub sub: String,
@@ -22,6 +25,7 @@ pub struct Claims {
 }
 
 impl Claims {
+    // ... no changes here
     pub fn new(sub: String, role: String) -> Self {
         let iat = Utc::now();
         let exp_seconds: i64 = std::env::var("JWT_EXPIRATION_SECONDS")
@@ -39,6 +43,7 @@ impl Claims {
     }
 }
 
+// The decode_token, hash_password, and verify_password functions remain unchanged...
 pub fn decode_token(token: &str) -> Result<Claims, AppError> {
     let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET harus diatur");
     decode::<Claims>(token, &DecodingKey::from_secret(secret.as_ref()), &Validation::default())
@@ -56,28 +61,32 @@ pub fn verify_password(password: &str, hash: &str) -> Result<bool, AppError> {
         .map_err(|_| AppError::InternalServerError(anyhow::anyhow!("Gagal verifikasi password")))
 }
 
-// Signature middleware ini sudah benar. Error sebelumnya adalah efek samping dari error lain.
-#[axum::debug_handler]
-pub async fn auth_middleware(next: Next, request: Request) -> Result<Response, AppError> {
-    let (mut parts, body) = request.into_parts();
-    let token = get_token_from_header(&parts)?;
+
+// MODIFIED: Updated middleware function signature and logic
+pub async fn auth_middleware(mut request: Request, next: Next) -> Result<Response, AppError> {
+    let token = get_token_from_headers(request.headers())?;
     let claims = decode_token(&token)?;
-    parts.extensions.insert(claims);
-    let request = Request::from_parts(parts, body);
+    request.extensions_mut().insert(claims);
     Ok(next.run(request).await)
 }
 
-fn get_token_from_header(parts: &Parts) -> Result<String, AppError> {
-    TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, &())
+// MODIFIED: Changed function to be synchronous and accept &HeaderMap
+fn get_token_from_headers(headers: &HeaderMap) -> Result<String, AppError> {
+    TypedHeader::<Authorization<Bearer>>::from_headers(headers)
         .map(|TypedHeader(Authorization(bearer))| bearer.token().to_string())
         .map_err(|_| AppError::Unauthorized)
 }
 
+
+// MODIFIED: Updated to use the new helper function
 #[async_trait]
-impl<S> FromRequestParts<S> for Claims where S: Send + Sync {
+impl<S> FromRequestParts<S> for Claims
+where
+    S: Send + Sync,
+{
     type Rejection = AppError;
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let token = get_token_from_header(parts)?;
+        let token = get_token_from_headers(&parts.headers)?;
         let claims = decode_token(&token)?;
         Ok(claims)
     }

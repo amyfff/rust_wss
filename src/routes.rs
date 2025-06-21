@@ -51,6 +51,8 @@ fn create_email_routes(app_state: Arc<AppState>) -> Router {
                 .put(email_handler::update_email)
                 .delete(email_handler::delete_email),
         )
+        // This line adds the authentication requirement
+        .route_layer(middleware::from_fn(auth_middleware))
         .with_state(app_state)
 }
 

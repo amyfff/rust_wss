@@ -1,11 +1,11 @@
-use crate::{error::AppError, models::email::{CreateEmail, Email, UpdateEmail}, ws, AppState};
-use axum::{extract::{Path, State}, Json};
+use crate::{auth::Claims, error::AppError, models::email::{CreateEmail, Email, UpdateEmail}, ws, AppState};
+use axum::{extract::{Path, State}, Extension, Json}; // Added Extension
 use std::sync::Arc;
 use uuid::Uuid;
 use validator::Validate;
 
 #[axum::debug_handler]
-pub async fn get_all_emails(State(state): State<Arc<AppState>>) -> Result<Json<Vec<Email>>, AppError> {
+pub async fn get_all_emails(State(state): State<Arc<AppState>>, _claims: Extension<Claims>) -> Result<Json<Vec<Email>>, AppError> {
     let emails = sqlx::query_as!(Email, "SELECT * FROM emails ORDER BY sent_at DESC")
         .fetch_all(&state.db_pool)
         .await?;
@@ -13,7 +13,7 @@ pub async fn get_all_emails(State(state): State<Arc<AppState>>) -> Result<Json<V
 }
 
 #[axum::debug_handler]
-pub async fn create_email(State(state): State<Arc<AppState>>, Json(payload): Json<CreateEmail>) -> Result<Json<Email>, AppError> {
+pub async fn create_email(State(state): State<Arc<AppState>>, _claims: Extension<Claims>, Json(payload): Json<CreateEmail>) -> Result<Json<Email>, AppError> {
     payload.validate()?;
     let email = sqlx::query_as!(
         Email,
@@ -30,7 +30,7 @@ pub async fn create_email(State(state): State<Arc<AppState>>, Json(payload): Jso
 }
 
 #[axum::debug_handler]
-pub async fn get_email_by_id(State(state): State<Arc<AppState>>, Path(id): Path<Uuid>) -> Result<Json<Email>, AppError> {
+pub async fn get_email_by_id(State(state): State<Arc<AppState>>, Path(id): Path<Uuid>, _claims: Extension<Claims>) -> Result<Json<Email>, AppError> {
     let email = sqlx::query_as!(Email, "SELECT * FROM emails WHERE id = $1", id)
         .fetch_optional(&state.db_pool)
         .await?
@@ -39,7 +39,7 @@ pub async fn get_email_by_id(State(state): State<Arc<AppState>>, Path(id): Path<
 }
 
 #[axum::debug_handler]
-pub async fn update_email(State(state): State<Arc<AppState>>, Path(id): Path<Uuid>, Json(payload): Json<UpdateEmail>) -> Result<Json<Email>, AppError> {
+pub async fn update_email(State(state): State<Arc<AppState>>, Path(id): Path<Uuid>, _claims: Extension<Claims>, Json(payload): Json<UpdateEmail>) -> Result<Json<Email>, AppError> {
     payload.validate()?;
     let email = sqlx::query_as!(Email, "SELECT * FROM emails WHERE id = $1", id)
         .fetch_optional(&state.db_pool)
@@ -63,7 +63,7 @@ pub async fn update_email(State(state): State<Arc<AppState>>, Path(id): Path<Uui
 }
 
 #[axum::debug_handler]
-pub async fn delete_email(State(state): State<Arc<AppState>>, Path(id): Path<Uuid>) -> Result<(), AppError> {
+pub async fn delete_email(State(state): State<Arc<AppState>>, Path(id): Path<Uuid>, _claims: Extension<Claims>) -> Result<(), AppError> {
     let result = sqlx::query!("DELETE FROM emails WHERE id = $1", id)
         .execute(&state.db_pool)
         .await?;

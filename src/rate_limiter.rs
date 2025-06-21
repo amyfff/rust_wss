@@ -1,8 +1,7 @@
 use tower_governor::{
-    // PERBAIKAN: Path import yang benar
-    governor::GovernorConfigBuilder,
+    governor::{middleware::NoOpMiddleware, GovernorConfigBuilder}, // MODIFIED IMPORT
     key_extractor::SmartIpKeyExtractor,
-    GovernorLayer, NoOpMiddleware,
+    GovernorLayer,
 };
 
 pub fn create_governor_layer() -> GovernorLayer<SmartIpKeyExtractor, NoOpMiddleware> {
@@ -14,5 +13,7 @@ pub fn create_governor_layer() -> GovernorLayer<SmartIpKeyExtractor, NoOpMiddlew
             .finish()
             .unwrap(),
     );
-    GovernorLayer { config: Box::leak(config) }
+    GovernorLayer {
+        config: Box::leak(config),
+    }
 }

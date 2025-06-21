@@ -1,6 +1,6 @@
 use crate::models::{book::Book, email::Email};
 use axum::extract::ws::{Message, WebSocket};
-use futures_util::{stream::StreamExt, SinkExt};
+use futures_util::stream::StreamExt; // MODIFIED: Removed SinkExt
 use serde::Serialize;
 use tokio::sync::broadcast;
 use uuid::Uuid;
